@@ -1,2 +1,7 @@
 # log_statsbars_R
-drawing stats bars in R on a log scale with categorical data on the X
+
+'''purpose:''' drawing stats bars in R on a log scale with categorical data on the X axis
+
+the function logscale_sigbars_generator takes in the Y values for the minimum and maximum location to plot the significance bars as well as how many bars to make and the size and spacing of them
+it returns a data frame with the positions of the lines requred to draw the bars in R
+this matrix can then be used to draw the sig bars (in my example I use ggplot2)
