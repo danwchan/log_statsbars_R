@@ -61,6 +61,7 @@ norm_summary$sample_id <- factor(norm_summary$sample_id, levels(norm_summary$sam
 #' first we can look at the data faceted by timepoint
 #' 
 
+#+ initial-plot, fig.width=12, fig.height=7
 KO_overview <- ggplot(norm_summary, aes(sample_id, cfu)) +
   geom_boxplot(outlier.shape = NA, width = 0.5, alpha = 0.5) +
   geom_point(position = position_jitter(width = 0.25), size = 0.3) +
@@ -74,7 +75,7 @@ KO_overview
 #' 
 #' let's zoom out to make space for the sig bars we will draw
 #' 
-
+#+ zoom-plot, fig.width=12, fig.height=7
 KO_overview <- KO_overview + coord_cartesian(ylim = c(1e5, 1e11))
 KO_overview
 
@@ -125,7 +126,7 @@ p <- logscale_sigbars_generator(1e11, 2e9, 5) #calculate 5 significance bars bet
 #' x positions of the bar are taken from indexing the "comparisons" list entered in base on which bars you want to make
 #' y positions of the bar are taken from indexing the "p" matrix made from logscale_sigbar_generator
 #' 
-#+ overview-plot, fig.width=7, fig.height=7
+#+ overview-plot, fig.width=12, fig.height=7
 KO_overview <- KO_overview +
   #facet 1
   geom_path(aes(x=rep(comparisons[[1]], each = 2),y=p[1,1:4]), data = facet1) +
