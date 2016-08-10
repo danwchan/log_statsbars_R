@@ -33,7 +33,71 @@ theme_mod <- theme_bw() +
         axis.ticks.y = element_blank(),
         axis.ticks.x = element_blank())
 
-#+ functions
+#+ Session-info
+sessionInfo() #for reproducibility
+
+#' #Load Data
+#' 
+load("example.RData")
+
+#' #Labels
+#' 
+#' create labels for the categories on the X axis, rename the facet factor and reorder the categories
+#'
+
+#+ labels
+label1 <- expression(italic(agrA[C123F]))
+label2 <- expression(italic(Delta*atl))
+label3 <- expression(italic(paste("icaA", ":", ":", "erm")))
+label4 <- expression(italic(paste("srtA", ":", ":", "erm")))
+label5 <- "wild type"
+label6 <- expression(italic(paste("hla", ":", ":", "erm")))
+norm_summary$timepoint <- mapvalues(norm_summary$timepoint, c("72", "120"), c("72 hours", "120 hours")) #renane
+norm_summary$sample_id <- factor(norm_summary$sample_id, levels(norm_summary$sample_id)[c(5,1,2,6,3,4)]) #reorder
+
+#'
+#' #Initial visualization
+#' 
+#' first we can look at the data faceted by timepoint
+#' 
+
+KO_overview <- ggplot(norm_summary, aes(sample_id, cfu)) +
+  geom_boxplot(outlier.shape = NA, width = 0.5, alpha = 0.5) +
+  geom_point(position = position_jitter(width = 0.25), size = 0.3) +
+  scale_x_discrete(labels = c(label5, label1, label2, label6, label3, label4)) + #using our nice labels from above
+  labs(x = " ", y = "CFU / raft") +
+  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x), labels = trans_format("log10", math_format(10^.x))) + #logscale with labels
+  facet_wrap(~timepoint) +
+  theme_mod
+KO_overview
+
+#' 
+#' let's zoom out to make space for the sig bars we will draw
+#' 
+
+KO_overview <- KO_overview + coord_cartesian(ylim = c(1e5, 1e11))
+KO_overview
+
+#' ##Facets
+#' 
+#' the sigbars require an overlayed data frame to map positions... I think it can be of any size?
+#' but it must possess a dimension which is a single factor level of the faceted data (in this case timepoint)
+#'
+
+facet1 <- data.frame(x = 1:4, y = 1:4, timepoint = "72 hours") #for the overlay later to allow for drawing stats comparison paths
+facet2 <- data.frame(x = 1:4, y = 1:4, timepoint = "120 hours") #for the overlay later to allow for drawing stats comparison paths
+
+#' ##Comparisons
+#' 
+#' this list sets up the categories that will be compared by position
+#' 
+comparisons <- list(c(1,2), c(1,3), c(1,4), c(1,5), c(1,6))
+
+#' ##Logscale
+#' 
+#' this list sets up the categories that will be compared by position
+#' 
+# to calculate the postions for statisitical significance bars o a log scale
 logscale_sigbars_generator <- function (max_draw_dim, min_draw_dim, number_bar_levels = 1, tick_size = 0.01, default_step =1.5) {
   #someday it'll be nice to have some input verification
   print("positions generated:", quote = FALSE)
@@ -53,48 +117,16 @@ logscale_sigbars_generator <- function (max_draw_dim, min_draw_dim, number_bar_l
   return(p)
 }
 
-#+ Session-info
-sessionInfo() #for reproducibility
+p <- logscale_sigbars_generator(1e11, 2e9, 5) #calculate 5 significance bars between the 1e11 and 2e9 interval
 
-#' #Load Data
+#' #Final Plot
 #' 
-load(example)
-
-#' ##Relabel
+#' each bar is drawn using a geom_path command and the P vlaue is added using the geom_test command
+#' x positions of the bar are taken from indexing the "comparisons" list entered in base on which bars you want to make
+#' y positions of the bar are taken from indexing the "p" matrix made from logscale_sigbar_generator
 #' 
-#' now it's showtime
-#' 
-
-#' ##Make graphs
-#' 
-#' the data, plot the p-values from the dunn's post hoc in overlay
-#' 
-#+ labels
-label1 <- expression(italic(agrA[C123F]))
-label2 <- expression(italic(Delta*atl))
-label3 <- expression(italic(paste("icaA", ":", ":", "erm")))
-label4 <- expression(italic(paste("srtA", ":", ":", "erm")))
-label5 <- "wild type"
-label6 <- expression(italic(paste("hla", ":", ":", "erm")))
-facet1 <- data.frame(x = 1:4, y = 1:4, timepoint = "72 hours") #for the overlay later to allow for drawing stats comparison paths
-facet2 <- data.frame(x = 1:4, y = 1:4, timepoint = "120 hours") #for the overlay later to allow for drawing stats comparison paths
-norm_summary$timepoint <- mapvalues(norm_summary$timepoint, c("72", "120"), c("72 hours", "120 hours"))
-norm_summary$sample_id <- factor(norm_summary$sample_id, levels(norm_summary$sample_id)[c(5,1,2,6,3,4)])
-#state the comparisons
-comparisons <- list(c(1,2), c(1,3), c(1,4), c(1,5), c(1,6))
-# to calculate the postions for statisitical significance bars o a log scale
-p <- logscale_sigbars_generator(1e11, 2e9, 5)
-
 #+ overview-plot, fig.width=7, fig.height=7
-KO_overview <- ggplot(norm_summary, aes(sample_id, cfu)) +
-  geom_boxplot(outlier.shape = NA, width = 0.5, alpha = 0.5) +
-  geom_point(position = position_jitter(width = 0.25), size = 0.3) +
-  scale_x_discrete(labels = c(label5, label1, label2, label6, label3, label4)) +
-  labs(x = " ", y = "CFU / raft") +
-  coord_cartesian(ylim = c(1e5, 1e11)) +
-  scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x), labels = trans_format("log10", math_format(10^.x))) +
-  facet_wrap(~timepoint) +
-  theme_mod + 
+KO_overview <- KO_overview +
   #facet 1
   geom_path(aes(x=rep(comparisons[[1]], each = 2),y=p[1,1:4]), data = facet1) +
   geom_text(aes(x=median(comparisons[[1]]),y=p[1,5],label="p==4.34%*%10^{-6}"), data = facet1, parse = TRUE) +
