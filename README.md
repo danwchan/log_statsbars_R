@@ -6,6 +6,8 @@ the function logscale_sigbars_generator takes in the Y values for the minimum an
 it returns a data frame with the positions of the lines requred to draw the bars in R
 this matrix can then be used to draw the sig bars (in my example I use ggplot2)
 
+# [Example use!](log_sigbar_example.html)
+
 ## Future Directions
 
 1. automatically add stats text based on an imported dataframe of statistics
